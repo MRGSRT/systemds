@@ -36,12 +36,12 @@ import java.util.stream.IntStream;
  * This estimator implements a naive but rather common approach of boolean matrix
  * multiplies which allows to infer the exact non-zero structure and thus is
  * also useful for sparse result preallocation.
- * 
+ *
  * For example, the following paper indicates that this approach is used for sparse
  * spGEMM in NVIDIA cuSPARSE and Intel MKL:
  * Weifeng Liu and Brian Vinter. An Efficient GPU General Sparse Matrix-Matrix
  * Multiplication for Irregular Data. In IPDPS, pages 370–381, 2014.
- * 
+ *
  */
 public class EstimatorBitsetMM extends SparsityEstimator
 {
@@ -49,7 +49,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	public DataCharacteristics estim(MMNode root) {
 		BitsetMatrix m1Map = getCachedSynopsis(root.getLeft());
 		BitsetMatrix m2Map = getCachedSynopsis(root.getRight());
-		
+
 		BitsetMatrix outMap = estimInternal(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); // memorize boolean matrix
 		return root.setDataCharacteristics(new MatrixCharacteristics(
@@ -60,7 +60,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		return estim(m1, m2, OpCode.MM);
 	}
-	
+
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
 		if( isExactMetadataOp(op) )
@@ -73,7 +73,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
 			outMap.getNumColumns(), outMap.getNonZeros());
 	}
-	
+
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
 		if( isExactMetadataOp(op) )
@@ -83,7 +83,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		return OptimizerUtils.getSparsity(outMap.getNumRows(),
 			outMap.getNumColumns(), outMap.getNonZeros());
 	}
-	
+
 	private BitsetMatrix getCachedSynopsis(MMNode node) {
 		if( node == null )
 			return null;
@@ -94,7 +94,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			estim(node); //recursively obtain synopsis
 		return (BitsetMatrix) node.getSynopsis();
 	}
-	
+
 	private static BitsetMatrix estimInternal(BitsetMatrix m1Map, BitsetMatrix m2Map, OpCode op) {
 		switch(op) {
 			case MM:      return m1Map.matMult(m2Map);
@@ -105,9 +105,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			case NEQZERO: return m1Map;
 			case EQZERO:  return m1Map.flip();
 			case TRANS:   return m1Map.transpose();
-			
+			case DIAG:	  return m1Map.diag();
+
 			//TODO implement all as bitset operations in both BitsetMatrix1 and BitsetMatrix2
-			case DIAG:
 			case RESHAPE:
 			default:
 				throw new NotImplementedException();
@@ -118,13 +118,13 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		protected final int _rlen;
 		protected final int _clen;
 		protected long _nonZeros;
-	
+
 		public BitsetMatrix(int rlen, int clen) {
 			_rlen = rlen;
 			_clen = clen;
 			_nonZeros = 0;
 		}
-		
+
 		public int getNumRows() {
 			return _rlen;
 		}
@@ -136,11 +136,11 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		public long getNonZeros() {
 			return _nonZeros;
 		}
-		
+
 		public abstract boolean get(int r, int c);
-		
+
 		public abstract void set(int r, int c);
-		
+
 		protected void init(MatrixBlock in) {
 			if (in.isEmptyBlock(false))
 				return;
@@ -174,23 +174,25 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			}
 			return out;
 		}
-		
+
 		protected abstract BitsetMatrix createBitSetMatrix(int rlen, int clen);
-		
+
 		protected abstract void buildIntern(MatrixBlock in, int rl, int ru);
-		
+
 		protected abstract long matMultIntern(BitsetMatrix bsb, BitsetMatrix bsc, int rl, int ru);
-		
+
 		protected abstract BitsetMatrix and(BitsetMatrix bsb);
-		
+
 		protected abstract BitsetMatrix or(BitsetMatrix bsb);
-		
+
 		protected abstract BitsetMatrix rbind(BitsetMatrix bsb);
-		
+
 		protected abstract BitsetMatrix cbind(BitsetMatrix bsb);
-		
+
+		protected abstract BitsetMatrix diag();
+
 		protected abstract BitsetMatrix flip();
-		
+
 		public BitsetMatrix transpose() {
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
 			for(int i=0; i<getNumColumns(); i++)
@@ -199,31 +201,30 @@ public class EstimatorBitsetMM extends SparsityEstimator
 						ret.set(k, i);
 			return ret;
 		}
-		
-		//protected abstract BitsetMatrix diag();
-		
+
+
 		//protected abstract BitsetMatrix reshape(int rows, int cols, boolean byrow);
 	}
-	
+
 	public static BitsetMatrix createBitset(int m, int n) {
 		return (long)m*n < Integer.MAX_VALUE ?
 			new BitsetMatrix1(m, n) : //linearized long array
 			new BitsetMatrix2(m, n);  //bitset per row
 	}
-	
+
 	public static BitsetMatrix createBitset(MatrixBlock in) {
 		return in.getLength() < Integer.MAX_VALUE ?
 			new BitsetMatrix1(in) : //linearized long array
 			new BitsetMatrix2(in);  //bitset per row
 	}
-	
+
 	/**
 	 * This class represents a boolean matrix and provides key operations.
 	 * In the interest of a cache-conscious matrix multiplication and reduced
 	 * memory overhead, we use a linearized and padded array of longs instead
 	 * of Java's BitSet per row (which causes memory overheads per row and does
 	 * not allow for range ORs). However, this implies a maximum size of 16GB.
-	 * 
+	 *
 	 */
 	public static class BitsetMatrix1 extends BitsetMatrix {
 		//linearized and padded data array in row-major order, where each long
@@ -236,17 +237,17 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			_rowLen = (int) Math.ceil((double)clen / 64);
 			_data = new long[rlen * _rowLen];
 		}
-		
+
 		public BitsetMatrix1(MatrixBlock in) {
 			this(in.getNumRows(), in.getNumColumns());
 			init(in);
 		}
-		
+
 		@Override
 		protected BitsetMatrix createBitSetMatrix(int rlen, int clen) {
 			return new BitsetMatrix1(rlen, clen);
 		}
-		
+
 		@Override
 		protected void buildIntern(MatrixBlock in, int rl, int ru) {
 			if (in.isInSparseFormat()) {
@@ -271,7 +272,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				}
 			}
 		}
-		
+
 		@Override
 		protected long matMultIntern(BitsetMatrix bsb2, BitsetMatrix bsc2, int rl, int ru) {
 			BitsetMatrix1 bsb = (BitsetMatrix1) bsb2;
@@ -281,13 +282,13 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			final int cd = _clen;
 			final int n = bsb._clen;
 			final int n64 = bsb._rowLen;
-			
+
 			final int blocksizeI = 32;
 			final int blocksizeK = 24;
 			final int blocksizeJ = 1024 * 64;
-			
+
 			long lnnz = 0;
-			
+
 			//blocked execution (cache-conscious)
 			for( int bi = rl; bi < ru; bi+=blocksizeI ) {
 				int bimin = Math.min(ru, bi+blocksizeI);
@@ -308,11 +309,11 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				// maintain nnz for entire output row block
 				lnnz += card(c, bi*n64, (bimin-bi)*n64);
 			}
-			
+
 			return lnnz;
 		}
-		
-		@Override 
+
+		@Override
 		public BitsetMatrix and(BitsetMatrix bsb) {
 			if( !(bsb instanceof BitsetMatrix1) )
 				throw new HopsException("Incompatible bitset types: "
@@ -324,8 +325,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
-		
-		@Override 
+
+		@Override
 		public BitsetMatrix or(BitsetMatrix bsb) {
 			if( !(bsb instanceof BitsetMatrix1) )
 				throw new HopsException("Incompatible bitset types: "
@@ -337,8 +338,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
-		
-		@Override 
+
+		@Override
 		public BitsetMatrix rbind(BitsetMatrix bsb) {
 			if( !(bsb instanceof BitsetMatrix1) )
 				throw new HopsException("Incompatible bitset types: "
@@ -350,8 +351,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
-		
-		@Override 
+
+		@Override
 		public BitsetMatrix cbind(BitsetMatrix bsb) {
 			if( !(bsb instanceof BitsetMatrix1) )
 				throw new HopsException("Incompatible bitset types: "
@@ -369,8 +370,20 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
-		
-		@Override 
+
+		public BitsetMatrix diag() {
+			BitsetMatrix1 ret = new BitsetMatrix1(1, getNumColumns());
+			for(int i = 0; i < getNumRows(); i++) {
+				for(int j = 0; j < getNumColumns(); j++) {
+					if(i == j && get(i, j)) {
+						ret.set(1, j);
+					}
+				}
+			}
+			return ret;
+		}
+
+		@Override
 		public BitsetMatrix flip() {
 			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), getNumColumns());
 			for(int i=0; i<_data.length; i++)
@@ -378,37 +391,37 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			ret._nonZeros = (long)getNumRows() * getNumColumns() - getNonZeros();
 			return ret;
 		}
-		
+
 		@Override
 		public void set(int r, int c) {
 			int off = r * _rowLen;
 			int wordIndex = wordIndex(c); //see BitSet.java
 			_data[off + wordIndex] |= (1L << c); //see BitSet.java
 		}
-		
+
 		@Override
 		public boolean get(int r, int c) {
 			int off = r * _rowLen;
 			int wordIndex = wordIndex(c); //see Bitset.java
 			return (_data[off + wordIndex] & (1L << c)) != 0; //see BitSet.java
 		}
-		
+
 		private boolean getCol(int off, int c) {
 			int wordIndex = wordIndex(c); //see Bitset.java
 			return (_data[off + wordIndex] & (1L << c)) != 0; //see BitSet.java
 		}
-		
+
 		private static int wordIndex(int bitIndex) {
 			return bitIndex >> 6; //see BitSet.java
 		}
-		
+
 		private static int card(long[] c, int ci, int len) {
 			int sum = 0;
 			for( int i = ci; i < ci+len; i++ )
 				sum += Long.bitCount(c[i]);
 			return sum;
 		}
-		
+
 		private static void or(long[] b, long[] c, int bi, int ci, int len) {
 			final int bn = len%8;
 			//compute rest
@@ -423,7 +436,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			}
 		}
 	}
-	
+
 	public static class BitsetMatrix2 extends BitsetMatrix {
 		private BitSet[] _data;
 
@@ -436,12 +449,12 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			this(in.getNumRows(), in.getNumColumns());
 			init(in);
 		}
-		
+
 		@Override
 		protected BitsetMatrix createBitSetMatrix(int rlen, int clen) {
 			return new BitsetMatrix2(rlen, clen);
 		}
-		
+
 		@Override
 		protected void buildIntern(MatrixBlock in, int rl, int ru) {
 			final int clen = in.getNumColumns();
@@ -469,7 +482,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				}
 			}
 		}
-		
+
 		@Override
 		protected long matMultIntern(BitsetMatrix bsb2, BitsetMatrix bsc2, int rl, int ru) {
 			BitsetMatrix2 bsb = (BitsetMatrix2) bsb2;
@@ -493,8 +506,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			}
 			return lnnz;
 		}
-		
-		@Override 
+
+		@Override
 		public BitsetMatrix and(BitsetMatrix bsb) {
 			if( !(bsb instanceof BitsetMatrix2) )
 				throw new HopsException("Incompatible bitset types: "
@@ -508,8 +521,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			}
 			return ret;
 		}
-		
-		@Override 
+
+		@Override
 		public BitsetMatrix or(BitsetMatrix bsb) {
 			if( !(bsb instanceof BitsetMatrix2) )
 				throw new HopsException("Incompatible bitset types: "
@@ -523,8 +536,8 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			}
 			return ret;
 		}
-		
-		@Override 
+
+		@Override
 		public BitsetMatrix rbind(BitsetMatrix bsb) {
 			if( !(bsb instanceof BitsetMatrix2) )
 				throw new HopsException("Incompatible bitset types: "
@@ -535,7 +548,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			System.arraycopy(b._data, 0, ret._data, _rlen, b._rlen); //shallow copy
 			return ret;
 		}
-		
+
 		@Override
 		protected BitsetMatrix cbind(BitsetMatrix bsb) {
 			if( !(bsb instanceof BitsetMatrix2) )
@@ -555,8 +568,21 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			}
 			return ret;
 		}
-		
-		@Override 
+
+		@Override
+		public BitsetMatrix diag() {
+			BitsetMatrix2 ret = new BitsetMatrix2(1, getNumColumns());
+			for(int i = 0; i < getNumRows(); i++) {
+				for(int j = 0; j < getNumColumns(); j++) {
+					if(i == j && get(i, j)) {
+						ret.set(1, j);
+					}
+				}
+			}
+			return ret;
+		}
+
+		@Override
 		public BitsetMatrix flip() {
 			BitsetMatrix2 ret = new BitsetMatrix2(getNumRows(), getNumColumns());
 			for(int i=0; i<_data.length; i++) {
@@ -566,12 +592,12 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			}
 			return ret;
 		}
-		
+
 		@Override
 		public boolean get(int r, int c) {
 			return _data[r].get(c);
 		}
-		
+
 		@Override
 		public void set(int r, int c) {
 			_data[r].set(c);
