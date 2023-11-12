@@ -376,7 +376,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			for(int i = 0; i < getNumRows(); i++) {
 				for(int j = 0; j < getNumColumns(); j++) {
 					if(i == j && get(i, j)) {
-						ret.set(1, j);
+						ret.set(0, j);
 					}
 				}
 			}
@@ -575,7 +575,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 			for(int i = 0; i < getNumRows(); i++) {
 				for(int j = 0; j < getNumColumns(); j++) {
 					if(i == j && get(i, j)) {
-						ret.set(1, j);
+						ret.set(0, j);
 					}
 				}
 			}
