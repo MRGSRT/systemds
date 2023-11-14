@@ -24,6 +24,8 @@ import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorDensityMap;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
 import org.apache.sysds.hops.estim.MMNode;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
@@ -80,7 +82,7 @@ public class OpBindChainTest extends AutomatedTestBase
 	}
 	
 	//DensityMap
-	/*@Test
+	@Test
 	public void testDMCaserbind() {
 		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, rbind);
 	}
@@ -88,7 +90,7 @@ public class OpBindChainTest extends AutomatedTestBase
 	@Test
 	public void testDMCasecbind() {
 		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, cbind);
-	}*/
+	}
 	
 	//MNC
 	@Test
@@ -102,6 +104,7 @@ public class OpBindChainTest extends AutomatedTestBase
 	}
 
 	//Bitset
+	@Test
 	public void testBitsetCaserbind() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, n, sparsity, rbind);
 	}
@@ -112,7 +115,7 @@ public class OpBindChainTest extends AutomatedTestBase
 	 }
 		
 	//Layered Graph
-	/*@Test
+	@Test
 	public void testLGCaserbind() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
 	}
@@ -120,7 +123,7 @@ public class OpBindChainTest extends AutomatedTestBase
 	@Test
 	public void testLGCasecbind() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, cbind);
-	}*/
+	}
 	
 	
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp, OpCode op) {

@@ -23,6 +23,9 @@ import org.junit.Test;
 import org.apache.sysds.hops.estim.EstimatorBasicAvg;
 import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
+import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
+import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
+import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.MMNode;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
@@ -73,7 +76,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 	}
 	
 	//DensityMap
-	/*@Test
+	@Test
 	public void testDMMult() {
 		runSparsityEstimateTest(new EstimatorDensityMap(), m, n, sparsity, mult);
 	}
@@ -92,7 +95,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 	@Test
 	public void testMNCPlus() {
 		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, n, sparsity, plus);
-	}*/
+	}
 	
 	//Bitset
 	@Test
@@ -110,7 +113,7 @@ public class OpElemWChainTest extends AutomatedTestBase
 	public void testLGCasemult() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, mult);
 	}
-		
+
 	@Test
 	public void testLGCaseplus() {
 		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, plus);

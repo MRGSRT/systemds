@@ -372,14 +372,15 @@ public class EstimatorBitsetMM extends SparsityEstimator
 		}
 
 		public BitsetMatrix diag() {
-			BitsetMatrix1 ret = new BitsetMatrix1(1, getNumColumns());
+			BitsetMatrix1 ret = new BitsetMatrix1(getNumRows(), 1);
 			for(int i = 0; i < getNumRows(); i++) {
 				for(int j = 0; j < getNumColumns(); j++) {
 					if(i == j && get(i, j)) {
-						ret.set(0, j);
+						ret.set(i, 0);
 					}
 				}
 			}
+			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
 
@@ -571,13 +572,14 @@ public class EstimatorBitsetMM extends SparsityEstimator
 
 		@Override
 		public BitsetMatrix diag() {
-			BitsetMatrix2 ret = new BitsetMatrix2(1, getNumColumns());
+			BitsetMatrix2 ret = new BitsetMatrix2(getNumRows(), 1);
 			for(int i = 0; i < getNumRows(); i++) {
 				for(int j = 0; j < getNumColumns(); j++) {
 					if(i == j && get(i, j)) {
-						ret.set(0, j);
+						ret.set(i, 0);
 					}
 				}
+				ret._nonZeros += ret._data[i].cardinality();
 			}
 			return ret;
 		}
