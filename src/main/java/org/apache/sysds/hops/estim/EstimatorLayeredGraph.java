@@ -71,7 +71,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 			LayeredGraph lg2 = new LayeredGraph(m2, _rounds);
 			LayeredGraph ret = estimInternal(lg1, lg2, op);
 			return OptimizerUtils.getSparsity(
-				m1.getNumRows(), m2.getNumColumns(), ret.estimateNnz());
+				ret._nodes.get(0).length, ret._nodes.get(1).length, ret.estimateNnz());
 		}
 	}
 
@@ -209,7 +209,7 @@ public class EstimatorLayeredGraph extends SparsityEstimator {
 
 			System.arraycopy(_nodes.get(0), 0, rows, 0, _nodes.get(0).length);
 
-			for (int i = _nodes.get(0).length; i < rows.length; i++)
+			for (int i = _nodes.get(0).length; i < _nodes.get(0).length + lg._nodes.get(0).length; i++)
 				rows[i] = new Node();
 
 			for(int i = 0; i < lg._nodes.get(0).length; i++) {
