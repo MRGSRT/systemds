@@ -76,7 +76,7 @@ public class EstimatorBitsetMM extends SparsityEstimator
 
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
-		if( isExactMetadataOp(op) )
+		if( isExactMetadataOp(op, m.getNumColumns()) )
 			return estimExactMetaData(m.getDataCharacteristics(), null, op).getSparsity();
 		BitsetMatrix m1Map = createBitset(m);
 		BitsetMatrix outMap = estimInternal(m1Map, null, op);
@@ -377,10 +377,10 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				for(int j = 0; j < getNumColumns(); j++) {
 					if(i == j && get(i, j)) {
 						ret.set(i, 0);
+						ret._nonZeros ++;
 					}
 				}
 			}
-			ret._nonZeros = card(ret._data, 0, ret._data.length);
 			return ret;
 		}
 
@@ -577,9 +577,9 @@ public class EstimatorBitsetMM extends SparsityEstimator
 				for(int j = 0; j < getNumColumns(); j++) {
 					if(i == j && get(i, j)) {
 						ret.set(i, 0);
+						ret._nonZeros++;
 					}
 				}
-				ret._nonZeros += ret._data[i].cardinality();
 			}
 			return ret;
 		}
