@@ -31,34 +31,34 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
  * This estimator implements an approach called density maps, as introduced in
- * David Kernert, Frank Köhler, Wolfgang Lehner: SpMacho - Optimizing Sparse 
+ * David Kernert, Frank Köhler, Wolfgang Lehner: SpMacho - Optimizing Sparse
  * Linear Algebra Expressions with Probabilistic Density Estimation. EDBT 2015: 289-300.
- * 
- * The basic idea is to maintain a density matrix per input, i.e., non-zero counts per 
+ *
+ * The basic idea is to maintain a density matrix per input, i.e., non-zero counts per
  * bxb cells of the matrix, and compute the output density map based on a matrix-multiply-like
  * aggregation of average estimates per cell. The output sparsity is then derived as an
- * aggregate of the output density map, but this density map can also be used for 
+ * aggregate of the output density map, but this density map can also be used for
  * intermediates in chains of matrix multiplications.
  */
 public class EstimatorDensityMap extends SparsityEstimator
 {
 	private static final int BLOCK_SIZE = 256;
-	
+
 	private final int _b;
-	
+
 	public EstimatorDensityMap() {
 		this(BLOCK_SIZE);
 	}
-	
+
 	public EstimatorDensityMap(int blocksize) {
 		_b = blocksize;
 	}
-	
+
 	@Override
 	public DataCharacteristics estim(MMNode root) {
 		DensityMap m1Map = getCachedSynopsis(root.getLeft());
 		DensityMap m2Map = getCachedSynopsis(root.getRight());
-		
+
 		//estimate output density map and sparsity
 		DensityMap outMap = estimIntern(m1Map, m2Map, root.getOp());
 		root.setSynopsis(outMap); //memoize density map
@@ -70,10 +70,10 @@ public class EstimatorDensityMap extends SparsityEstimator
 	public double estim(MatrixBlock m1, MatrixBlock m2) {
 		return estim(m1, m2, OpCode.MM);
 	}
-	
+
 	@Override
 	public double estim(MatrixBlock m1, MatrixBlock m2, OpCode op) {
-		if( isExactMetadataOp(op) )
+		if( isExactMetadataOp(op) && (op == OpCode.DIAG && m1.getNumColumns() == 1))
 			return estimExactMetaData(m1.getDataCharacteristics(), m2 != null ?
 				m2.getDataCharacteristics() : null, op).getSparsity();
 		DensityMap m1Map = new DensityMap(m1, _b);
@@ -83,12 +83,12 @@ public class EstimatorDensityMap extends SparsityEstimator
 		return OptimizerUtils.getSparsity( //aggregate output histogram
 			outMap.getNumRowsOrig(), outMap.getNumColumnsOrig(), outMap.getNonZeros());
 	}
-	
+
 	@Override
 	public double estim(MatrixBlock m, OpCode op) {
 		return estim(m, null, op);
 	}
-	
+
 	private DensityMap getCachedSynopsis(MMNode node) {
 		if( node == null )
 			return null;
@@ -99,10 +99,10 @@ public class EstimatorDensityMap extends SparsityEstimator
 			estim(node); //recursively obtain synopsis
 		return (DensityMap) node.getSynopsis();
 	}
-	
+
 	/**
 	 * Computes the output density map given the density maps of the input operands.
-	 * 
+	 *
 	 * @param m1Map density map left-hand-side operand
 	 * @param m2Map density map right-hand-side operand
 	 * @param op operator code
@@ -115,11 +115,11 @@ public class EstimatorDensityMap extends SparsityEstimator
 			case PLUS:    return estimInternPlus(m1Map, m2Map);
 			case NEQZERO: return m1Map;
 			case EQZERO:  return estimInternEqZero(m1Map);
-			
+
 			case RBIND:
 			case CBIND:
 				//TODO simple append not possible due to partial blocks at end of m1Map
-			
+
 			case TRANS:   return estimInternTrans(m1Map);
 			case DIAG:    return estimInternDiag(m1Map);
 			case RESHAPE: return estimInternReshape(m1Map);
@@ -127,7 +127,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 				throw new NotImplementedException();
 		}
 	}
-	
+
 	private DensityMap estimInternMM(DensityMap m1Map, DensityMap m2Map) {
 		final int m = m1Map.getNumRows();
 		final int cd = m1Map.getNumColumns();
@@ -156,7 +156,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		return new DensityMap(out, m1Map.getNumRowsOrig(),
 			m2Map.getNumColumnsOrig(), _b, true);
 	}
-	
+
 	private DensityMap estimInternMult(DensityMap m1Map, DensityMap m2Map) {
 		MatrixBlock out = new MatrixBlock(m1Map.getNumRows(), m1Map.getNumColumns(), false);
 		DenseBlock c = out.allocateBlock().getDenseBlock();
@@ -169,7 +169,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 		return new DensityMap(out, m1Map.getNumRowsOrig(),
 			m1Map.getNumColumnsOrig(), _b, true);
 	}
-	
+
 	private DensityMap estimInternPlus(DensityMap m1Map, DensityMap m2Map) {
 		MatrixBlock out = new MatrixBlock(m1Map.getNumRows(), m1Map.getNumColumns(), false);
 		DenseBlock c = out.allocateBlock().getDenseBlock();
@@ -185,31 +185,31 @@ public class EstimatorDensityMap extends SparsityEstimator
 		return new DensityMap(out, m1Map.getNumRowsOrig(),
 			m1Map.getNumColumnsOrig(), _b, true);
 	}
-	
+
 	private DensityMap estimInternTrans(DensityMap m1Map) {
-		MatrixBlock out = LibMatrixReorg.transpose(m1Map.getMap(), 
+		MatrixBlock out = LibMatrixReorg.transpose(m1Map.getMap(),
 			new MatrixBlock(m1Map.getNumColumns(), m1Map.getNumRows(), false));
 		return new DensityMap(out, m1Map.getNumColumnsOrig(),
 			m1Map.getNumRowsOrig(), _b, m1Map._scaled);
 	}
-	
+
 	private DensityMap estimInternDiag(DensityMap m1Map) {
 		if( m1Map.getNumColumnsOrig() > 1 )
 			throw new NotImplementedException();
 		m1Map.toNnz();
-		MatrixBlock out = LibMatrixReorg.diag(m1Map.getMap(), 
+		MatrixBlock out = LibMatrixReorg.diag(m1Map.getMap(),
 			new MatrixBlock(m1Map.getNumRows(), m1Map.getNumRows(), false));
 		return new DensityMap(out, m1Map.getNumRowsOrig(),
 			m1Map.getNumRowsOrig(), _b, m1Map._scaled);
 	}
-	
+
 	private static DensityMap estimInternReshape(DensityMap m1Map) {
 		MatrixBlock out = new MatrixBlock(1,1,(double)m1Map.getNonZeros());
 		int b = Math.max(m1Map.getNumRowsOrig(), m1Map.getNumColumnsOrig());
 		return new DensityMap(out, m1Map.getNumRowsOrig(),
 			m1Map.getNumColumnsOrig(), b, false);
 	}
-	
+
 	private DensityMap estimInternEqZero(DensityMap m1Map) {
 		MatrixBlock out = new MatrixBlock(m1Map.getNumRows(), m1Map.getNumColumns(), false);
 		m1Map.toSparsity();
@@ -219,14 +219,14 @@ public class EstimatorDensityMap extends SparsityEstimator
 		return new DensityMap(out, m1Map.getNumRowsOrig(),
 			m1Map.getNumColumnsOrig(), _b, m1Map._scaled);
 	}
-	
+
 	public static class DensityMap {
 		private final MatrixBlock _map;
 		private final int _rlen;
 		private final int _clen;
 		private final int _b;
 		private boolean _scaled; //false->nnz, true->sp
-		
+
 		public DensityMap(MatrixBlock in, int b) {
 			_rlen = in.getNumRows();
 			_clen = in.getNumColumns();
@@ -236,7 +236,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			if( !isPow2(_b) )
 				LOG.warn("Invalid block size: "+_b);
 		}
-		
+
 		public DensityMap(MatrixBlock map, int rlenOrig, int clenOrig, int b, boolean scaled) {
 			_rlen = rlenOrig;
 			_clen = clenOrig;
@@ -246,44 +246,44 @@ public class EstimatorDensityMap extends SparsityEstimator
 			if( !isPow2(_b) )
 				LOG.warn("Invalid block size: "+_b);
 		}
-		
+
 		public MatrixBlock getMap() {
 			return _map;
 		}
-		
+
 		public int getNumRows() {
 			return _map.getNumRows();
 		}
-		
+
 		public int getNumColumns() {
 			return _map.getNumColumns();
 		}
-		
+
 		public int getNumRowsOrig() {
 			return _rlen;
 		}
-		
+
 		public int getNumColumnsOrig() {
 			return _clen;
 		}
-		
+
 		public long getNonZeros() {
 			if( _scaled ) toNnz();
 			return Math.round(_map.sum());
 		}
-		
+
 		public int getRowBlockize(int r) {
 			return UtilFunctions.computeBlockSize(_rlen, r+1, _b);
 		}
-		
+
 		public int getColBlockize(int c) {
 			return UtilFunctions.computeBlockSize(_clen, c+1, _b);
 		}
-		
+
 		public double get(int r, int c) {
 			return _map.quickGetValue(r, c);
 		}
-		
+
 		public void toSparsity() {
 			if( _scaled ) return;
 			//scale histogram by block size, w/ awareness of boundary blocks
@@ -300,7 +300,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			}
 			_scaled = true;
 		}
-		
+
 		public void toNnz() {
 			if( !_scaled ) return;
 			//scale histogram by block size, w/ awareness of boundary blocks
@@ -317,26 +317,26 @@ public class EstimatorDensityMap extends SparsityEstimator
 			}
 			_scaled = false;
 		}
-		
+
 		private MatrixBlock init(MatrixBlock in) {
 			int rlen = (int)Math.ceil((double)_rlen/_b);
 			int clen = (int)Math.ceil((double)_clen/_b);
 			MatrixBlock out = new MatrixBlock(rlen, clen, false);
-			
+
 			//fast-path empty input
 			if( in.isEmptyBlock(false) )
 				return out;
-			
+
 			//allocate dense output block
 			DenseBlock c = out.allocateBlock().getDenseBlock();
-			
+
 			//fast-path fully dense input
 			if( in.getLength() == in.getNonZeros() ) {
 				c.set(1); //set sparsity 1.0 into all cells
 				out.setNonZeros(in.getLength());
 				return out;
 			}
-			
+
 			//compute nnz histogram
 			if( in.isInSparseFormat() ) {
 				SparseBlock sblock = in.getSparseBlock();
@@ -361,7 +361,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			out.recomputeNonZeros();
 			return out;
 		}
-		
+
 		private static boolean isPow2(int value) {
 			double tmp = (Math.log(value) / Math.log(2));
 			return Math.floor(tmp) == Math.ceil(tmp);

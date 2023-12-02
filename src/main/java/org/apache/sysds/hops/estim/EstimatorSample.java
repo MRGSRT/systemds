@@ -25,9 +25,12 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
+
+import java.util.Arrays;
 
 /**
  * This estimator implements an approach based on row/column sampling
@@ -150,12 +153,71 @@ public class EstimatorSample extends SparsityEstimator
 				}
 				return spOut/ix.length;
 			}
-			case RBIND:
-			case CBIND:
+			case RBIND: {
+				MatrixBlock m3 = m1.append(m2, false);
+				int k = Math.max(m3.getNumColumns(), m3.getNumRows());
+				int[] ix = UtilFunctions.getSortedSampleIndexes(k, (int) Math.max(k * _frac, 1));
+				double spOut = 0;
+				if(m3.getNumColumns() > m3.getNumRows()) {
+					int[] cnnz1 = computeColumnNnz(m3, ix);
+					spOut = (double) Arrays.stream(cnnz1).sum() / m3.getNumRows();
+				}
+				else {
+					int[] rnnz1 = computeRowNnz(m3, ix);
+					spOut = (double) Arrays.stream(rnnz1).sum() / m3.getNumColumns();
+				}
+				return spOut / ix.length;
+			}
+			case CBIND: {
+				MatrixBlock m3 = m1.append(m2, true);
+				int k = Math.max(m3.getNumColumns(), m3.getNumRows());
+				int[] ix = UtilFunctions.getSortedSampleIndexes(k, (int) Math.max(k * _frac, 1));
+				double spOut = 0;
+				if(m3.getNumColumns() > m3.getNumRows()) {
+					int[] cnnz1 = computeColumnNnz(m3, ix);
+					spOut = (double) Arrays.stream(cnnz1).sum() / m3.getNumRows();
+				}
+				else {
+					int[] rnnz1 = computeRowNnz(m3, ix);
+					spOut = (double) Arrays.stream(rnnz1).sum() / m3.getNumColumns();
+				}
+				return spOut / ix.length;
+			}
+
 			case EQZERO:
 			case NEQZERO:
-			case TRANS:
-			case DIAG:
+			case TRANS: {
+				MatrixBlock t = LibMatrixReorg.transpose(m1);
+				int k = Math.max(t.getNumColumns(), t.getNumRows());
+				int[] ix = UtilFunctions.getSortedSampleIndexes(k, (int) Math.max(k * _frac, 1));
+				double spOut = 0;
+				if(t.getNumColumns() > t.getNumRows()) {
+					int[] cnnz1 = computeColumnNnz(t, ix);
+					spOut = (double) Arrays.stream(cnnz1).sum() / t.getNumRows();
+				}
+				else {
+					int[] rnnz1 = computeRowNnz(t, ix);
+					spOut = (double) Arrays.stream(rnnz1).sum() / t.getNumColumns();
+				}
+				return spOut / ix.length;
+			}
+			case DIAG: {
+				if(m1.getNumColumns() == 1) {
+					int k = m1.getNumRows();
+					int[] ix = UtilFunctions.getSortedSampleIndexes(k, (int) Math.max(k * _frac, 1));
+					int[] rnnz1 = computeRowNnz(m1, ix);
+					double spOut = (double) Arrays.stream(rnnz1).sum() / k;
+					return spOut / ix.length;
+				}
+				else {
+					MatrixBlock d = LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), 1, false));
+					int k = d.getNumRows();
+					int[] ix = UtilFunctions.getSortedSampleIndexes(k, (int) Math.max(k * _frac, 1));
+					int[] rnnz1 = computeRowNnz(d, ix);
+					double spOut = (double) Arrays.stream(rnnz1).sum();
+					return spOut / ix.length;
+				}
+			}
 			case RESHAPE:
 				DataCharacteristics mc1 = m1.getDataCharacteristics();
 				DataCharacteristics mc2 = m2.getDataCharacteristics();

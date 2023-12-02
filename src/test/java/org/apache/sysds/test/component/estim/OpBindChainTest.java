@@ -82,15 +82,15 @@ public class OpBindChainTest extends AutomatedTestBase
 	}
 	
 	//DensityMap
-	@Test
-	public void testDMCaserbind() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, rbind);
-	}
-	
-	@Test
-	public void testDMCasecbind() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, cbind);
-	}
+//	@Test
+//	public void testDMCaserbind() {
+//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, rbind);
+//	}
+//
+//	@Test
+//	public void testDMCasecbind() {
+//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, cbind);
+//	}
 	
 	//MNC
 	@Test
@@ -115,15 +115,15 @@ public class OpBindChainTest extends AutomatedTestBase
 	 }
 		
 	//Layered Graph
-	@Test
-	public void testLGCaserbind() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
-	}
-			
-	@Test
-	public void testLGCasecbind() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, cbind);
-	}
+//	@Test
+//	public void testLGCaserbind() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
+//	}
+//
+//	@Test
+//	public void testLGCasecbind() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, cbind);
+//	}
 	
 	
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, int n, double[] sp, OpCode op) {

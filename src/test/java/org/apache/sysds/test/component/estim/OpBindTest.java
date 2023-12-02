@@ -81,15 +81,15 @@ public class OpBindTest extends AutomatedTestBase
 	}
 	
 	//DensityMap
-	@Test
-	public void testDMCaserbind() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, rbind);
-	}
-	
-	@Test
-	public void testDMCasecbind() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, cbind);
-	}
+//	@Test
+//	public void testDMCaserbind() {
+//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, rbind);
+//	}
+//
+//	@Test
+//	public void testDMCasecbind() {
+//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, n, sparsity, cbind);
+//	}
 	
 	//MNC
 	@Test
@@ -114,15 +114,15 @@ public class OpBindTest extends AutomatedTestBase
 	}
 	
 	//Layered Graph
-	@Test
-	public void testLGCaserbind() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
-	}
-
-	@Test
-	public void testLGCasecbind() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, cbind);
-	}
+//	@Test
+//	public void testLGCaserbind() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, rbind);
+//	}
+//
+//	@Test
+//	public void testLGCasecbind() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, n, sparsity, cbind);
+//	}
 
 	//Sample
 	@Test

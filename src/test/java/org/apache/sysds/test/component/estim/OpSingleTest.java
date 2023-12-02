@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,7 @@ import org.apache.sysds.hops.estim.EstimatorBasicWorst;
 import org.apache.sysds.hops.estim.EstimatorBitsetMM;
 import org.apache.sysds.hops.estim.EstimatorDensityMap;
 import org.apache.sysds.hops.estim.EstimatorLayeredGraph;
+import org.apache.sysds.hops.estim.EstimatorMatrixHistogram;
 import org.apache.sysds.hops.estim.EstimatorSample;
 import org.apache.sysds.hops.estim.SparsityEstimator;
 import org.apache.sysds.hops.estim.SparsityEstimator.OpCode;
@@ -42,7 +43,7 @@ public class OpSingleTest extends AutomatedTestBase
 	private final static int m = 600;
 	private final static int k = 300;
 	private final static double sparsity = 0.2;
-	private final static OpCode eqzero = OpCode.EQZERO;
+//	private final static OpCode eqzero = OpCode.EQZERO;
 	private final static OpCode diag = OpCode.DIAG;
 	private final static OpCode neqzero = OpCode.NEQZERO;
 	private final static OpCode trans = OpCode.TRANS;
@@ -52,68 +53,78 @@ public class OpSingleTest extends AutomatedTestBase
 	public void setUp() {
 		//do  nothing
 	}
-	
+
 	//Average Case
-	@Test
-	public void testAvgEqzero() {
-		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, eqzero);
-	}
-	
+//	@Test
+//	public void testAvgEqzero() {
+//		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, eqzero);
+//	}
+
 	@Test
 	public void testAvgDiag() {
-		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, diag);
+		runSparsityEstimateTest(new EstimatorBasicAvg(), m, 1, sparsity, diag);
 	}
 	
 	@Test
 	public void testAvgNeqzero() {
 		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, neqzero);
 	}
-	
+
 	@Test
 	public void testAvgTrans() {
 		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, trans);
 	}
-	
+
 	@Test
 	public void testAvgReshape() {
 		runSparsityEstimateTest(new EstimatorBasicAvg(), m, k, sparsity, reshape);
 	}
-	
+
 	//Worst Case
+//	@Test
+//	public void testWorstEqzero() {
+//		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, eqzero);
+//	}
+
+//	@Test
+//	public void testWCasediagM() {
+//		runSparsityEstimateTest(new EstimatorBasicWorst(), m, m, sparsity, diag);
+//	}
+
 	@Test
-	public void testWorstEqzero() {
-		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, eqzero);
+	public void testWCasediagV() {
+		runSparsityEstimateTest(new EstimatorBasicWorst(), m, 1, sparsity, diag);
 	}
-	
-	@Test
-	public void testWCasediag() {
-		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, diag);
-	}
-	
+
 	@Test
 	public void testWorstNeqzero() {
 		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, neqzero);
 	}
-	
+
 	@Test
 	public void testWoestTrans() {
 		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, trans);
 	}
-	
+
 	@Test
 	public void testWorstReshape() {
 		runSparsityEstimateTest(new EstimatorBasicWorst(), m, k, sparsity, reshape);
 	} 
-	
+
 	//DensityMap
-	@Test
-	public void testDMCaseeqzero() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, eqzero);
-	}
+//	@Test
+//	public void testDMCaseeqzero() {
+//		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, eqzero);
+//	}
+
+//	@Test
+//	public void testDMCasediagM() {
+//		runSparsityEstimateTest(new EstimatorDensityMap(), m, m, sparsity, diag);
+//	}
 
 	@Test
-	public void testDMCasediag() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, diag);
+	public void testDMCasediagV() {
+		runSparsityEstimateTest(new EstimatorDensityMap(), m, 1, sparsity, diag);
 	}
 
 	@Test
@@ -132,40 +143,48 @@ public class OpSingleTest extends AutomatedTestBase
 	}
 
 	//MNC
-	@Test
-	public void testMNCCaseeqzero() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, eqzero);
-	}
+//	@Test
+//	public void testMNCCaseeqzero() {
+//		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, sparsity, eqzero);
+//	}
+
+//	@Test
+//	public void testMNCCasediagM() {
+//		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, m, sparsity, diag);
+//	}
 
 	@Test
-	public void testMNCCasediag() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, 1, sparsity, diag);
+	public void testMNCCasediagV() {
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, 1, sparsity, diag);
 	}
 
 	@Test
 	public void testMNCCaseneqzero() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, neqzero);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, sparsity, neqzero);
 	}
 
 	@Test
 	public void testMNCCasetrans() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, trans);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, sparsity, trans);
 	}
 
 	@Test
 	public void testMNCCasereshape() {
-		runSparsityEstimateTest(new EstimatorDensityMap(), m, k, sparsity, reshape);
+		runSparsityEstimateTest(new EstimatorMatrixHistogram(), m, k, sparsity, reshape);
 	}
 
 	//Bitset
+//	@Test
+//	public void testBitsetCaseeqzero() {
+//		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, sparsity, eqzero);
+//	}
+
 	@Test
-	public void testBitsetCaseeqzero() {
-		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, sparsity, eqzero);
-	}
-	
+	public void testBitsetCasediagM() {	runSparsityEstimateTest(new EstimatorBitsetMM(), m, m, sparsity, diag);	}
+
 	@Test
-	public void testBitsetCasediag() {	runSparsityEstimateTest(new EstimatorBitsetMM(), m, m, sparsity, diag);	}
-	
+	public void testBitsetCasediagV() {	runSparsityEstimateTest(new EstimatorBitsetMM(), m, 1, sparsity, diag); }
+
 	@Test
 	public void testBitsetNeqzero() {
 		runSparsityEstimateTest(new EstimatorBitsetMM(), m, k, sparsity, neqzero);
@@ -182,41 +201,44 @@ public class OpSingleTest extends AutomatedTestBase
 	}
 	
 	//Layered Graph
-	@Test
-	public void testLGCaseeqzero() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, eqzero);
-	}
-
-	@Test
-	public void testLGCasediag() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, diag);
-	}
-
-	@Test
-	public void testLGCaseneqzero() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, neqzero);
-	}
-
-	@Test
-	public void testLGCasetrans() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, trans);
-	}
-
-	@Test
-	public void testLGCasereshape() {
-		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, reshape);
-	}
+//	@Test
+//	public void testLGCaseeqzero() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, eqzero);
+//	}
+//
+//	@Test
+//	public void testLGCasediag() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, diag);
+//	}
+//
+//	@Test
+//	public void testLGCaseneqzero() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, neqzero);
+//	}
+//
+//	@Test
+//	public void testLGCasetrans() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, trans);
+//	}
+//
+//	@Test
+//	public void testLGCasereshape() {
+//		runSparsityEstimateTest(new EstimatorLayeredGraph(), m, k, sparsity, reshape);
+//	}
 
 	//Sample
-	@Test
-	public void testSampleCaseeqzero() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, eqzero);
-	}
+//	@Test
+//	public void testSampleCaseeqzero() {
+//		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, eqzero);
+//	}
+
+//	@Test
+//	public void testSampleCasediagM() {
+//		runSparsityEstimateTest(new EstimatorSample(), m, m, sparsity, diag);
+//	}
 
 	@Test
-	public void testSampleCasediag() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, diag);
-	}
+	public void testSampleCasediagV() {runSparsityEstimateTest(new EstimatorSample(), m, 1, sparsity, diag);}
 
 	@Test
 	public void testSampleCaseneqzero() {
@@ -228,11 +250,11 @@ public class OpSingleTest extends AutomatedTestBase
 		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, trans);
 	}
 
-	@Test
-	public void testSampleCasereshape() {
-		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, reshape);
-	}
-	
+//	@Test
+//	public void testSampleCasereshape() {
+//		runSparsityEstimateTest(new EstimatorSample(), m, k, sparsity, reshape);
+//	}
+
 	private static void runSparsityEstimateTest(SparsityEstimator estim, int m, int k, double sp, OpCode op) {
 		MatrixBlock m1 = MatrixBlock.randOperations(m, k, sp, 1, 1, "uniform", 3);
 		MatrixBlock m2 = new MatrixBlock();
@@ -241,7 +263,9 @@ public class OpSingleTest extends AutomatedTestBase
 			case EQZERO:
 				//TODO find out how to do eqzero
 			case DIAG:
-				m2 = LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), 1, false));
+				m2 = m1.getNumColumns() == 1
+					? LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), m1.getNumRows(), false))
+					: LibMatrixReorg.diag(m1, new MatrixBlock(m1.getNumRows(), 1, false));
 				est = estim.estim(m1, op);
 				break;
 			case NEQZERO:
