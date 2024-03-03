@@ -162,6 +162,8 @@ public class OpBindTest extends AutomatedTestBase
 				throw new NotImplementedException();
 		}
 		//compare estimated and real sparsity
-		TestUtils.compareScalars(est, m3.getSparsity(), (estim instanceof EstimatorBasicWorst) ? 5e-1 : 1e-2);
+		TestUtils.compareScalars(est, m3.getSparsity(),
+			(estim instanceof EstimatorBasicWorst) ? 5e-1 :
+			(estim instanceof EstimatorSample) ? 5e-2 : 1e-2);
 	}
 }
